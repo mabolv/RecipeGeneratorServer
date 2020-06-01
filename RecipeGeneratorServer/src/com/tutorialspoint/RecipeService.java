@@ -14,13 +14,19 @@ import org.json.JSONException;
 
 public class RecipeService {  
 	
-    RecipeDao recipeDao = new RecipeDao();  
-    @GET 
-    @Path("/recipe") 
-    @Produces(MediaType.APPLICATION_JSON) 
-    public List<Recipe> getRecipe() throws SQLException{ 
-       return RecipeDao.getAllRecipes(); 
-    }  
+	@GET 
+	@Path("/login") 
+	@Produces(MediaType.APPLICATION_JSON) 
+	public String Login(@QueryParam("user") String user, @QueryParam("pass") String pass) throws SQLException{ 
+	   return RecipeDao.Login(user,pass); 
+	} 
+	
+	@GET 
+	@Path("/register") 
+	@Produces(MediaType.APPLICATION_JSON) 
+	public String Register(@QueryParam("user") String user, @QueryParam("pass") String pass) throws SQLException{ 
+	   return RecipeDao.Register(user,pass); 
+	} 
    
      
 	RecipeDao recipesDao = new RecipeDao();  
@@ -33,23 +39,41 @@ public class RecipeService {
 	}  
 	   
  
-	RecipeDao recipesinfoDao = new RecipeDao();  
+	RecipeInfo recipesinfoDao = new RecipeInfo();  
 	@GET 
-	@Path("/recipeinfo") 
+	@Path("/recipesinfo") 
 	@Produces(MediaType.APPLICATION_JSON) 
-	public List<Recipe> getRecipesInfo() throws SQLException{ 
-		return RecipeDao.getAllRecipes(); 
+	public String getRecipeInfo(@QueryParam("id") int id) throws SQLException, IOException, JSONException{ 
+		return RecipeInfo.execute(id); 
 	}  
-      
+    
+	@GET 
+	@Path("/savedrecipes") 
+	@Produces(MediaType.APPLICATION_JSON) 
+	public String saveRecipe(@QueryParam("user") String user) throws SQLException{ 
+	   return RecipeDao.saveRecipe(user); 
+	}  
+	
+	@GET 
+	@Path("/deleterecipe") 
+	@Produces(MediaType.APPLICATION_JSON) 
+	public String deleteRecipe(@QueryParam("id") int id, @QueryParam("name") String name, @QueryParam("user") String user) throws SQLException{ 
+	   return RecipeDao.deleteRecipe(id,name,user); 
+	}  
+	
    @GET 
-   //@Path("/recipes") 
-   public String addRecipe(@QueryParam("name") String name,@QueryParam("prof") String prof) throws SQLException{ 
-      return RecipeDao.addRecipe(name,prof); 
+   @Path("/addrecipe") 
+   @Produces(MediaType.APPLICATION_JSON) 
+   public String addRecipe(@QueryParam("id") int id, @QueryParam("name") String name, @QueryParam("user") String user) throws SQLException{ 
+      return RecipeDao.addRecipe(id,name,user); 
    }  
    
+   RecipeGenerate recgen = new RecipeGenerate();
    @GET 
-   @Path("/recipeinfo") 
-   public String deleteUser(@QueryParam("id") int id) throws SQLException{ 
-      return RecipeDao.deleteRecipe(id); 
+   @Path("/generate") 
+   @Produces(MediaType.APPLICATION_JSON)
+   public String generate(@QueryParam("timeframe") String timeframe, @QueryParam("targetcal") String targetcal, @QueryParam("diet") String diet, @QueryParam("exclude") String exclude) throws IOException, JSONException{ 
+      return RecipeGenerate.execute(timeframe, targetcal, diet, exclude); 
    } 
+   
 }

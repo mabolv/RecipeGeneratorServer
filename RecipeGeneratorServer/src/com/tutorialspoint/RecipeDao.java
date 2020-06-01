@@ -18,21 +18,141 @@ import org.json.JSONObject;
 
 public class RecipeDao { 
 	private static Connection con = DB.getConnection();	
+	//inloggning
+public static String Login(String user, String pass) throws SQLException {
+		
+		String g = "";
+		PreparedStatement sta = con.prepareStatement("select user from login where user = '"+user+"' && pass='"+pass+"'");
+		ResultSet r = sta.executeQuery();
+		System.out.println(sta);
+		
+		while (r.next()){
+		g = r.getString("user");
+		}
+		if(g=="") {
+	    
+	    String rec="[{\"login\":\"Wrong username or password\"}]";
+	    return rec;
+	    
+		}
+		else {
+	        
+		String rec="[{\"login\":\"Welcome "+g+"\"}]";	   	    
+		return rec;
+		}
+	}
 	
-	public static String deleteRecipe(int id) throws SQLException {
-		PreparedStatement stat = con.prepareStatement("DELETE FROM user WHERE id='"+id+"'");
+//registrera ny användare
+public static String Register(String user, String pass) throws SQLException {
+		System.out.println(user);
+		String g = "";
+		PreparedStatement sta = con.prepareStatement("select user from login where user = '"+user+"'");
+		ResultSet r = sta.executeQuery();
+		while (r.next()){
+		g = r.getString("user");
+		}
+		System.out.println(g);
+		if(g=="") {
+		PreparedStatement stat = con.prepareStatement("INSERT INTO login (user, pass) VALUES ('"+user+"', '"+pass+"')");
 	    int temp = stat.executeUpdate();
-		return temp+" Recipe removed ";
+	    
+	    String rec="[{\"login\":\"Success\"}]";
+	    return rec;
+	    
+		}
+		else {
+	        
+		String rec="[{\"login\":\"Username taken\"}]";	   	    
+		return rec;
+		}
+	}
+	//se sparade recept
+	public static String saveRecipe(String user) throws SQLException {
+
+	    PreparedStatement statm = con.prepareStatement("SELECT * FROM recipes where user='"+user+"'");
+        ResultSet rs = statm.executeQuery();
+        String titel;
+        int id2;
+        String rec="[";
+        
+   	    while (rs.next()){
+   	        titel = rs.getString("name");
+   	        id2 = rs.getInt("id");
+
+   	     rec=rec+"{\"titel\":\""+titel+"\",\"" + 
+   	        		"id\":\""+id2+"\"},";	      
+   	    	}
+   	    if(rec!="[") {
+   	    rec=rec.substring(0, rec.length() - 1);
+   	    }
+   	    rec=rec+"]";
+   	    
+	return rec;
 	} 
 	
-	public static String addRecipe(String name,String prof) throws SQLException {
-		PreparedStatement stat = con.prepareStatement("INSERT INTO user (name, profession) VALUES ('"+name+"', '"+prof+"')");
+	//ta bort sparat recept
+	public static String deleteRecipe(int id, String name, String user) throws SQLException {
+		name=name.replaceAll("_", " ");
+		name=name.replaceAll("@", "&");
+		PreparedStatement stat = con.prepareStatement("DELETE FROM recipes WHERE id='"+id+"' && name='"+name+"' && user='"+user+"'");
 	    int temp = stat.executeUpdate();
-		return temp+" Person added";
+	   
+	    PreparedStatement statm = con.prepareStatement("SELECT * FROM recipes where user = '"+user+"'");
+        ResultSet rs = statm.executeQuery();
+        String titel;
+        int id2;
+        String rec="[";
+        
+   	    while (rs.next()){
+   	        titel = rs.getString("name");
+   	        id2 = rs.getInt("id");
+
+   	     rec=rec+"{\"titel\":\""+titel+"\",\"" + 
+   	        		"id\":\""+id2+"\"},";	      
+   	    	}
+   	    rec=rec.substring(0, rec.length() - 1);
+   	    rec=rec+"]";
+   	    
+	return rec;
+	} 
+	
+	//spara recept
+	public static String addRecipe(int id, String name, String user) throws SQLException {
+		System.out.println(user);
+		name=name.replaceAll("_", " ");
+		name=name.replaceAll("@", "&");
+		String g = "";
+		PreparedStatement sta = con.prepareStatement("select name from recipes where exists (select '"+id+"' from recipes where name = '"+name+"' && user='"+user+"')");
+		ResultSet r = sta.executeQuery();
+		while (r.next()){
+		g = r.getString("name");
+		}
+		System.out.println(g);
+		if(g=="") {
+		PreparedStatement stat = con.prepareStatement("INSERT INTO recipes (id, name, user) VALUES ('"+id+"', '"+name+"', '"+user+"')");
+	    int temp = stat.executeUpdate();
+		}
+	        PreparedStatement statm = con.prepareStatement("SELECT * FROM recipes where user='"+user+"'");
+	        ResultSet rs = statm.executeQuery();
+	        String titel;
+	        int id2;
+	        String rec="[";
+	        
+	   	    while (rs.next()){
+	   	        titel = rs.getString("name");
+	   	        id2 = rs.getInt("id");
+
+	   	     rec=rec+"{\"titel\":\""+titel+"\",\"" + 
+	   	        		"id\":\""+id2+"\"},";	      
+	   	    	}
+	   	    rec=rec.substring(0, rec.length() - 1);
+	   	    rec=rec+"]";
+	   	    
+		return rec;
 	}
 	
 	
-	
+	//sökning på recept genom inmatade ingredienser
 	
 	String res[] = new String[12];
 	String used[] = new String[12];
@@ -144,7 +264,7 @@ public class RecipeDao {
 	           String res[] = new String[12];
 	           
 	           for(int i=0; i<12; i++) {
-	        	   res[i] = " (" + a[i].length() + "/" + count + " ingredients, " + array[i].length() + " missing)";
+	        	   res[i] = " (" + a[i].length() + "/" + count + " ingredients used, " + array[i].length() + " missing)";
 	           }
 		        
 		    	String rec = "[";
@@ -168,42 +288,5 @@ public class RecipeDao {
 	
 		}
 	
-	 public static List<Recipe> getAllRecipes() throws SQLException{ 
-		 	 
-	 //Database
-     List<Recipe> recipeList = null;
-     
-     PreparedStatement stat = con.prepareStatement("CREATE TABLE IF NOT EXISTS user (id int, name varchar(255), profession varchar(255))");
-     stat.executeUpdate();
-     
-     PreparedStatement statm = con.prepareStatement("SELECT * FROM user");
-     ResultSet rs = statm.executeQuery();
- 
-     if(rs.next()==false) {
-    	 PreparedStatement sta = con.prepareStatement("INSERT INTO user (id, name, profession) VALUES ('1', 'Mahesh', 'Teacher')");
-         sta.executeUpdate();
-     }
-     
-     PreparedStatement sta = con.prepareStatement("SELECT * FROM user");
-     ResultSet s = sta.executeQuery();
-     
-     String src, titel, res, used, unused;
-     int id;
-     
-     recipeList = new ArrayList<Recipe>(); 
-     
-	    while (s.next()){
-	        
-	        src = s.getString("");
-	        titel = s.getString("");
-	        res = s.getString("");
-	        used = s.getString("");
-	        unused = s.getString("");
-	        id = s.getInt("id");
-
-	        Recipe user = new Recipe(src, titel, res, used, unused, id);
-	        recipeList.add(user);  	        
-	    	}
-	    return recipeList; 
-   }	 
+	
 }

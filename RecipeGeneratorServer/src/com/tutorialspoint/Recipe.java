@@ -13,7 +13,7 @@ public class Recipe implements Serializable {
    private String used;
    private String unused;
    private int id; 
-   public Recipe(){} 
+   
    
    public Recipe(String src, String titel, String res, String used, String unused, int id){  
       this.src = src; 
